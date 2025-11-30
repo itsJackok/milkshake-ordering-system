@@ -1,0 +1,23 @@
+ 
+################################
+#       FLUTTER / DART         #
+################################
+
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/pubspec.lock
+
+################################
+#       .NET / C# / VS         #
+################################
+
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.suo
+*.cache
+*.log
