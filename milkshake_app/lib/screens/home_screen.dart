@@ -318,69 +318,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         SizedBox(height: 16),
 
-                        // Progress card (only if there is a next tier)
-                        if (discount != null && discount.nextTier != null)
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.blue[200]!),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Progress to ${discount.nextTier} tier',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue[900],
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '${discount.currentOrders}/${discount.ordersToNextTier}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue[700],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: LinearProgressIndicator(
-                                    value: progress,
-                                    minHeight: 10,
-                                    backgroundColor: Colors.blue[100],
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(
-                                      Colors.blue[600]!,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  remainingOrders > 0
-                                      ? '$remainingOrders more orders to unlock!'
-                                      : 'You\'ve unlocked this tier 🎉',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.blue[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                       
+                        
                       ],
                     ),
                   ),
