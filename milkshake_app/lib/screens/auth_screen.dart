@@ -131,7 +131,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 Widget build(BuildContext context) {
   final screenWidth = MediaQuery.of(context).size.width;
 
-  // Make the card responsive but never huge
   final cardWidth = screenWidth > 600 ? 480.0 : screenWidth * 0.9;
 
   return Scaffold(
@@ -215,9 +214,8 @@ Widget build(BuildContext context) {
                   ),
                 ),
 
-                // Tab content – slightly smaller height
                 SizedBox(
-                  height: 420, // was 500
+                  height: 420,
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: TabBarView(
