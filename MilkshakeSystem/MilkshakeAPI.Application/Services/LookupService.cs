@@ -47,7 +47,6 @@ namespace MilkshakeAPI.Application.Services
 
 		public async Task<ApiResponse<LookupDto>> CreateLookupAsync(CreateLookupRequest request, int createdBy)
 		{
-			// Validate type
 			if (request.Type != "Flavour" && request.Type != "Topping" && request.Type != "Consistency")
 			{
 				return new ApiResponse<LookupDto>
@@ -56,8 +55,6 @@ namespace MilkshakeAPI.Application.Services
 					Message = "Invalid lookup type. Must be Flavour, Topping, or Consistency"
 				};
 			}
-
-			// Check for duplicate name within type
 			var existing = await _unitOfWork.Lookups.FindAsync(
 				l => l.Name == request.Name && l.Type == request.Type && l.IsActive);
 
@@ -85,7 +82,6 @@ namespace MilkshakeAPI.Application.Services
 			await _unitOfWork.Lookups.AddAsync(lookup);
 			await _unitOfWork.SaveChangesAsync();
 
-			// Log creation
 			await _auditService.LogChangeAsync(
 				createdBy,
 				"Lookup",
@@ -124,7 +120,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Log changes
 			if (lookup.Name != request.Name)
 			{
 				await _auditService.LogChangeAsync(
@@ -145,7 +140,6 @@ namespace MilkshakeAPI.Application.Services
 					lookup.Description ?? "", request.Description ?? "");
 			}
 
-			// Update lookup
 			lookup.Name = request.Name;
 			lookup.Price = request.Price;
 			lookup.Description = request.Description;
@@ -185,7 +179,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Soft delete
 			lookup.IsActive = false;
 			lookup.LastUpdated = DateTime.UtcNow;
 			lookup.LastUpdatedBy = deletedBy;
@@ -194,7 +187,6 @@ namespace MilkshakeAPI.Application.Services
 			await _unitOfWork.Lookups.UpdateAsync(lookup);
 			await _unitOfWork.SaveChangesAsync();
 
-			// Log deletion
 			await _auditService.LogChangeAsync(
 				deletedBy, "Lookup", id, "Delete", null, null,
 				$"Deleted {lookup.Type}: {lookup.Name}");

@@ -61,8 +61,6 @@ namespace MilkshakeAPI.Application.Services
 
 			public decimal GetVATPercentage()
 			{
-				// This will be called synchronously, so we use a default
-				// The actual VAT will be calculated async in CalculateVATAsync
 				return 15m;
 			}
 		}

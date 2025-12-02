@@ -22,7 +22,6 @@ namespace MilkshakeAPI.Application.Services
 
 		public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
 		{
-			// Check if email already exists
 			var existingUser = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
 			if (existingUser.Any())
 			{
@@ -33,10 +32,8 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Hash password
 			var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-			// Create user
 			var user = new User
 			{
 				FullName = request.FullName,
@@ -66,7 +63,6 @@ namespace MilkshakeAPI.Application.Services
 
 		public async Task<AuthResponse> LoginAsync(LoginRequest request)
 		{
-			// Find user by email
 			var users = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email && u.IsActive);
 			var user = users.FirstOrDefault();
 
@@ -79,7 +75,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Verify password
 			if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
 			{
 				return new AuthResponse
@@ -89,12 +84,10 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Update last login
 			user.LastLoginAt = DateTime.UtcNow;
 			await _unitOfWork.Users.UpdateAsync(user);
 			await _unitOfWork.SaveChangesAsync();
 
-			// Get discount tier name
 			string tierName = "None";
 			if (user.CurrentDiscountTier > 0)
 			{

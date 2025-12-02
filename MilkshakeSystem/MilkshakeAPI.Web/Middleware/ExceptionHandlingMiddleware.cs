@@ -85,7 +85,6 @@ namespace MilkshakeAPI.Web.Middleware
 		}
 	}
 
-	// Extension method for easy middleware registration
 	public static class ExceptionHandlingMiddlewareExtensions
 	{
 		public static IApplicationBuilder UseExceptionHandlingMiddleware(

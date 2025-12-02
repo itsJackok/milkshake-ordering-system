@@ -23,7 +23,6 @@ namespace MilkshakeAPI.Application.Services
 			var allOrders = await _unitOfWork.Orders.GetAllAsync();
 			var query = allOrders.AsQueryable();
 
-			// Apply filters
 			if (filter.StartDate.HasValue)
 			{
 				query = query.Where(o => o.OrderDate.Date >= filter.StartDate.Value.Date);
@@ -51,8 +50,6 @@ namespace MilkshakeAPI.Application.Services
 
 			var totalRecords = query.Count();
 			var totalPages = (int)Math.Ceiling(totalRecords / (double)filter.PageSize);
-
-			// Paginate
 			var pagedOrders = query
 				.OrderByDescending(o => o.OrderDate)
 				.Skip((filter.PageNumber - 1) * filter.PageSize)
@@ -109,7 +106,7 @@ namespace MilkshakeAPI.Application.Services
 
 				trends.Add(new TrendDataDto
 				{
-					Label = date.ToString("ddd"), // Mon, Tue, Wed, etc.
+					Label = date.ToString("ddd"),
 					OrderCount = dayOrders.Count,
 					Revenue = dayOrders.Where(o => o.PaymentStatus == "Paid").Sum(o => o.TotalCost)
 				});
@@ -146,7 +143,6 @@ namespace MilkshakeAPI.Application.Services
 
 		public async Task<List<TrendDataDto>> GetDayOfWeekAnalysisAsync()
 		{
-			// Get last 4 weeks of data
 			var fourWeeksAgo = DateTime.Today.AddDays(-28);
 			var orders = (await _unitOfWork.Orders.GetAllAsync())
 				.Where(o => o.OrderDate.Date >= fourWeeksAgo)
@@ -176,7 +172,6 @@ namespace MilkshakeAPI.Application.Services
 			var allAuditLogs = await _unitOfWork.AuditLogs.GetAllAsync();
 			var query = allAuditLogs.AsQueryable();
 
-			// Apply filters
 			if (filter.StartDate.HasValue)
 			{
 				query = query.Where(a => a.Timestamp.Date >= filter.StartDate.Value.Date);
@@ -190,7 +185,6 @@ namespace MilkshakeAPI.Application.Services
 			var totalRecords = query.Count();
 			var totalPages = (int)Math.Ceiling(totalRecords / (double)filter.PageSize);
 
-			// Paginate
 			var pagedLogs = query
 				.OrderByDescending(a => a.Timestamp)
 				.Skip((filter.PageNumber - 1) * filter.PageSize)

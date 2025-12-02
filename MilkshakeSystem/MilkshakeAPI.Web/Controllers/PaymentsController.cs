@@ -23,7 +23,6 @@ namespace MilkshakeAPI.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ProcessPayment([FromBody] InitializePaymentRequest request)
         {
-            // 1. Validate order
             var order = await _unitOfWork.Orders.GetByIdAsync(request.OrderId);
             if (order == null)
             {
@@ -34,9 +33,8 @@ namespace MilkshakeAPI.Web.Controllers
                 });
             }
 
-            // (Optional) sanity check amount vs order total here
 
-            var transactionId = $"MOCK-{order.Id}-{DateTime.UtcNow.Ticks}";
+            var transactionId = $"{order.Id}-{DateTime.UtcNow.Ticks}";
 
             var payment = new Payment
             {
@@ -54,7 +52,6 @@ namespace MilkshakeAPI.Web.Controllers
 
             await _unitOfWork.Payments.AddAsync(payment);
 
-            // 3. Update order payment fields
             order.PaymentStatus = "Paid";
             order.PaymentTransactionId = transactionId;
             order.PaymentMethod = request.PaymentMethod;
@@ -63,10 +60,8 @@ namespace MilkshakeAPI.Web.Controllers
 
             await _unitOfWork.Orders.UpdateAsync(order);
 
-            // 4. Save everything
             await _unitOfWork.SaveChangesAsync();
 
-            // 5. Send payment receipt e-mail (uses your existing EmailService)
             await _emailService.SendPaymentReceiptEmailAsync(order.Id);
 
             return Ok(new

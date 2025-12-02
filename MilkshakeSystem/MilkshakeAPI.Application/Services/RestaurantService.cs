@@ -65,26 +65,21 @@ namespace MilkshakeAPI.Application.Services
 			var slots = new List<AvailableTimeSlot>();
 			var now = DateTime.Now;
 
-			// Start from opening time or current time (whichever is later)
 			var startTime = date.Date.Add(restaurant.OpeningTime);
 			if (date.Date == now.Date && now > startTime)
 			{
-				// Round up to next 15-minute slot
 				var minutes = now.Minute;
 				var roundedMinutes = ((minutes + 14) / 15) * 15;
 				startTime = now.Date.AddHours(now.Hour).AddMinutes(roundedMinutes);
 
-				// Add 15 minutes buffer for preparation
 				startTime = startTime.AddMinutes(15);
 			}
 
 			var endTime = date.Date.Add(restaurant.ClosingTime);
 
-			// Generate 15-minute intervals
 			var currentSlot = startTime;
 			while (currentSlot < endTime)
 			{
-				// Check if slot is available (not fully booked)
 				var ordersAtTime = (await _unitOfWork.Orders.FindAsync(
 					o => o.RestaurantId == restaurantId &&
 						 o.PickupTime >= currentSlot &&
@@ -92,7 +87,6 @@ namespace MilkshakeAPI.Application.Services
 						 o.OrderStatus != "Cancelled"))
 					.Count();
 
-				// Allow max 5 orders per 15-min slot
 				var isAvailable = ordersAtTime < 5;
 
 				slots.Add(new AvailableTimeSlot
@@ -110,7 +104,6 @@ namespace MilkshakeAPI.Application.Services
 
 		public async Task<ApiResponse<RestaurantDto>> CreateRestaurantAsync(CreateRestaurantRequest request, int createdBy)
 		{
-			// Validate times
 			if (request.OpeningTime >= request.ClosingTime)
 			{
 				return new ApiResponse<RestaurantDto>
@@ -135,7 +128,6 @@ namespace MilkshakeAPI.Application.Services
 			await _unitOfWork.Restaurants.AddAsync(restaurant);
 			await _unitOfWork.SaveChangesAsync();
 
-			// Log creation
 			await _auditService.LogChangeAsync(
 				createdBy, "Restaurant", restaurant.Id, "Create", null, null,
 				$"Created restaurant: {request.Name}");
@@ -170,7 +162,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Validate times
 			if (request.OpeningTime >= request.ClosingTime)
 			{
 				return new ApiResponse<RestaurantDto>
@@ -180,7 +171,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Log changes
 			if (restaurant.Name != request.Name)
 			{
 				await _auditService.LogChangeAsync(
@@ -195,7 +185,6 @@ namespace MilkshakeAPI.Application.Services
 					restaurant.Address, request.Address);
 			}
 
-			// Update restaurant
 			restaurant.Name = request.Name;
 			restaurant.Address = request.Address;
 			restaurant.PhoneNumber = request.PhoneNumber;

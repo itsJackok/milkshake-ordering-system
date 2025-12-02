@@ -30,7 +30,6 @@ namespace MilkshakeAPI.Application.Services
 		{
 			try
 			{
-				// Validate user
 				var user = await _unitOfWork.Users.GetByIdAsync(request.UserId);
 				if (user == null)
 				{
@@ -41,7 +40,6 @@ namespace MilkshakeAPI.Application.Services
 					};
 				}
 
-				// Validate restaurant
 				var restaurant = await _unitOfWork.Restaurants.GetByIdAsync(request.RestaurantId);
 				if (restaurant == null || !restaurant.IsActive)
 				{
@@ -52,7 +50,6 @@ namespace MilkshakeAPI.Application.Services
 					};
 				}
 
-				// Validate pickup time
 				if (request.PickupTime <= DateTime.Now)
 				{
 					return new ApiResponse<OrderResponse>
@@ -62,13 +59,10 @@ namespace MilkshakeAPI.Application.Services
 					};
 				}
 
-				// Calculate subtotal
 				var subtotal = await _pricingService.CalculateOrderSubtotalAsync(request.Items);
 
-				// Calculate VAT
 				var vat = await _pricingService.CalculateVATAsync(subtotal);
 
-				// Calculate discount
 				var discountRequest = new CalculateDiscountRequest
 				{
 					UserId = request.UserId,
@@ -77,10 +71,8 @@ namespace MilkshakeAPI.Application.Services
 				};
 				var discount = await _discountService.CalculateDiscountAsync(discountRequest);
 
-				// Calculate total
 				var totalCost = subtotal + vat - discount.ActualDiscount;
 
-				// Create order
 				var order = new Order
 				{
 					UserId = request.UserId,
@@ -99,7 +91,6 @@ namespace MilkshakeAPI.Application.Services
 				await _unitOfWork.Orders.AddAsync(order);
 				await _unitOfWork.SaveChangesAsync();
 
-				// Create order items
 				foreach (var item in request.Items)
 				{
 					var flavour = await _unitOfWork.Lookups.GetByIdAsync(item.FlavourId);
@@ -123,7 +114,6 @@ namespace MilkshakeAPI.Application.Services
 
 				await _unitOfWork.SaveChangesAsync();
 
-				// Return response
 				return new ApiResponse<OrderResponse>
 				{
 					Success = true,
@@ -158,7 +148,6 @@ namespace MilkshakeAPI.Application.Services
 			var user = await _unitOfWork.Users.GetByIdAsync(order.UserId);
 			var restaurant = await _unitOfWork.Restaurants.GetByIdAsync(order.RestaurantId);
 
-			// Get discount tier name
 			string tierName = "None";
 			if (order.DiscountTierApplied > 0)
 			{
@@ -279,7 +268,6 @@ namespace MilkshakeAPI.Application.Services
 			{
 				order.CompletedAt = DateTime.UtcNow;
 
-				// Update customer statistics
 				var user = await _unitOfWork.Users.GetByIdAsync(order.UserId);
 				if (user != null)
 				{
@@ -315,11 +303,9 @@ namespace MilkshakeAPI.Application.Services
 
 			var allOrders = await _unitOfWork.Orders.GetAllAsync();
 
-			// Today's orders
 			var todayOrders = allOrders.Where(o => o.OrderDate.Date == today).ToList();
 			var yesterdayOrders = allOrders.Where(o => o.OrderDate.Date == yesterday).ToList();
 
-			// Today's revenue (only paid orders)
 			var todayRevenue = todayOrders
 				.Where(o => o.PaymentStatus == "Paid")
 				.Sum(o => o.TotalCost);
@@ -328,7 +314,6 @@ namespace MilkshakeAPI.Application.Services
 				.Where(o => o.PaymentStatus == "Paid")
 				.Sum(o => o.TotalCost);
 
-			// Calculate percentage changes
 			int ordersChange = yesterdayOrders.Count > 0
 				? (int)((todayOrders.Count - yesterdayOrders.Count) / (decimal)yesterdayOrders.Count * 100)
 				: 0;
@@ -337,7 +322,6 @@ namespace MilkshakeAPI.Application.Services
 				? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue * 100)
 				: 0;
 
-			// Popular flavour today
 			var todayOrderIds = todayOrders.Select(o => o.Id).ToList();
 			var todayItems = (await _unitOfWork.OrderItems.GetAllAsync())
 				.Where(oi => todayOrderIds.Contains(oi.OrderId))
@@ -358,7 +342,6 @@ namespace MilkshakeAPI.Application.Services
 				popularFlavourCount = popularFlavour.Count();
 			}
 
-			// Pending orders
 			var pendingOrders = allOrders.Count(o => o.OrderStatus == "Pending");
 
 			return new DashboardStats

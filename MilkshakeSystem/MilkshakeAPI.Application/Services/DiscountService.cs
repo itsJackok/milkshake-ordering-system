@@ -37,7 +37,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Get user's eligible tier
 			var eligibleTiers = await _unitOfWork.DiscountTiers.FindAsync(
 				t => t.IsActive &&
 					 t.MinimumOrders <= user.TotalCompletedOrders &&
@@ -58,7 +57,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Calculate discount
 			var calculatedDiscount = request.OrderSubtotal * (tier.DiscountPercentage / 100);
 			var actualDiscount = Math.Min(calculatedDiscount, tier.MaxDiscountAmount);
 
@@ -152,7 +150,6 @@ namespace MilkshakeAPI.Application.Services
 				};
 			}
 
-			// Log changes
 			if (tier.MinimumOrders != dto.MinimumOrders)
 			{
 				await _auditService.LogChangeAsync(updatedBy, "DiscountTier", tierId, "Update",
@@ -177,7 +174,6 @@ namespace MilkshakeAPI.Application.Services
 					"MaxDiscountAmount", tier.MaxDiscountAmount.ToString(), dto.MaxDiscountAmount.ToString());
 			}
 
-			// Update tier
 			tier.MinimumOrders = dto.MinimumOrders;
 			tier.MinimumDrinksPerOrder = dto.MinimumDrinksPerOrder;
 			tier.DiscountPercentage = dto.DiscountPercentage;
