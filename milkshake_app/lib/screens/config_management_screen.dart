@@ -26,10 +26,8 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Load configs from API
       final configs = await ApiService.getConfigs();
       
-      // Load audit log from API
       final auditLog = await ApiService.getConfigAuditLog();
       
       if (mounted) {
@@ -160,103 +158,129 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
     );
   }
 
-  Widget _buildConfigTable() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
-        columns: [
-          DataColumn(
-            label: Text(
-              'Name',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+Widget _buildConfigTable() {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: DataTable(
+      headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
+      columns: const [
+        DataColumn(
+          label: Text(
+            'Name',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          DataColumn(
-            label: Text(
-              'Type',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+        ),
+        DataColumn(
+          label: Text(
+            'Type',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          DataColumn(
-            label: Text(
-              'Value',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+        ),
+        DataColumn(
+          label: Text(
+            'Value',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          DataColumn(
-            label: Text(
-              'Last Updated',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+        ),
+        DataColumn(
+          label: Text(
+            'Last Updated',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          DataColumn(
-            label: Text(
-              'Actions',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+        ),
+        DataColumn(
+          label: Text(
+            'Actions',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-        ],
-        rows: _configs.map((config) {
-          // Handle different field name formats from backend
-          final name = config['name'] ?? config['key'] ?? 'Unknown';
-          final type = config['type'] ?? 'Config';
-          final value = config['value'] ?? '';
-          final lastUpdated = config['lastUpdated'] ?? 
-                             config['lastUpdatedAt'] ?? 
-                             config['updatedAt'] ?? 
-                             'N/A';
-          
-          return DataRow(
-            cells: [
-              DataCell(Text(name.toString())),
-              DataCell(Text(type.toString())),
-              DataCell(
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Text(
-                    value.toString(),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
-                    ),
+        ),
+      ],
+      rows: _configs.map((config) {
+        final id = config['id'] ?? config['configId'];
+        final name = (config['name'] ?? config['key'] ?? 'Unknown').toString();
+        final type =
+            (config['dataType'] ?? config['type'] ?? 'Config').toString();
+        final value = (config['value'] ?? '').toString();
+
+        final rawDate = config['lastUpdated'] ??
+            config['lastUpdatedAt'] ??
+            config['updatedAt'] ??
+            config['createdAt'];
+
+        String lastUpdatedText = 'N/A';
+        if (rawDate != null && rawDate.toString().trim().isNotEmpty) {
+          try {
+            final dt = DateTime.parse(rawDate.toString());
+            lastUpdatedText =
+                DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
+          } catch (_) {
+            lastUpdatedText = rawDate.toString();
+          }
+        }
+
+        return DataRow(
+          cells: [
+            DataCell(Text(name)),
+            DataCell(Text(type)),
+            DataCell(
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[900],
                   ),
                 ),
               ),
-              DataCell(Text(lastUpdated.toString())),
-              DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: () => _showDeleteConfigDialog(config),
-                      child: Text(
-                        'Delete',
-                        style: TextStyle(color: Colors.red),
-                      ),
+            ),
+            DataCell(Text(lastUpdatedText)),
+            DataCell(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () => _showDeleteConfigDialog({
+                      ...config,
+                      'id': id,
+                      'name': name,
+                      'value': value,
+                    }),
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: Colors.red),
                     ),
-                    SizedBox(width: 4),
-                    TextButton(
-                      onPressed: () => _showEditConfigDialog(config),
-                      child: Text(
-                        'Edit',
-                        style: TextStyle(color: Colors.blue[700]),
-                      ),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton(
+                    onPressed: () => _showEditConfigDialog({
+                      ...config,
+                      'id': id,
+                      'name': name,
+                      'value': value,
+                    }),
+                    child: Text(
+                      'Edit',
+                      style:
+                          TextStyle(color: Colors.blue[700], fontSize: 14),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
+            ),
+          ],
+        );
+      }).toList(),
+    ),
+  );
+}
+
 
   Widget _buildAuditSection() {
     return Card(
@@ -295,56 +319,26 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
     );
   }
 
-  Widget _buildAuditTable() {
+    Widget _buildAuditTable() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
         headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
-        columns: [
-          DataColumn(
-            label: Text(
-              'Config Name',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Old Value',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'New Value',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Changed By',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Changed At',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Reason',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
+        columns: const [
+          DataColumn(label: Text('Config Name', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Old Value', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('New Value', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Changed By', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Changed At', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Reason', style: TextStyle(fontWeight: FontWeight.bold))),
         ],
         rows: _auditLog.map((log) {
           return DataRow(
             cells: [
-              DataCell(Text(log['configName'])),
+              DataCell(Text(log['configName'] ?? '')),
               DataCell(
                 Text(
-                  log['oldValue'],
+                  log['oldValue'] ?? '',
                   style: TextStyle(
                     color: Colors.red[700],
                     decoration: TextDecoration.lineThrough,
@@ -353,20 +347,20 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
               ),
               DataCell(
                 Text(
-                  log['newValue'],
+                  log['newValue'] ?? '',
                   style: TextStyle(
                     color: Colors.green[700],
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              DataCell(Text(log['changedBy'])),
-              DataCell(Text(log['changedAt'])),
+              DataCell(Text(log['changedBy'] ?? '')),
+              DataCell(Text(log['changedAt'] ?? '')),
               DataCell(
                 SizedBox(
                   width: 200,
                   child: Text(
-                    log['reason'],
+                    log['reason'] ?? '',
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -386,39 +380,28 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Add New Configuration'),
+        title: const Text('Add New Configuration'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Configuration Name',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
+              const Text('Configuration Name', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
                   hintText: 'e.g., Discount Threshold',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-              SizedBox(height: 16),
-              
-              Text(
-                'Type',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Text('Type', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: selectedType,
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 items: ['Config', 'Setting', 'Parameter'].map((type) {
                   return DropdownMenuItem(
@@ -430,20 +413,14 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                   selectedType = value!;
                 },
               ),
-              SizedBox(height: 16),
-              
-              Text(
-                'Value',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Text('Value', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               TextField(
                 controller: valueController,
                 decoration: InputDecoration(
                   hintText: 'e.g., 100 or 15%',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ],
@@ -452,24 +429,24 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
+              if (nameController.text.isNotEmpty &&
+                  valueController.text.isNotEmpty) {
                 final userProvider = context.read<UserProvider>();
-                
-                // Call API to create config
+
                 final result = await ApiService.createConfig(
-                  name: nameController.text,
+                  name: nameController.text.trim(),
                   type: selectedType,
-                  value: valueController.text,
+                  value: valueController.text.trim(),
                   createdBy: userProvider.userId,
                 );
-                
+
                 if (result['success'] == true) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text('Configuration added successfully!'),
                       backgroundColor: Colors.green,
                     ),
@@ -479,7 +456,9 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(result['message'] ?? 'Failed to add configuration'),
+                      content: Text(
+                        result['message'] ?? 'Failed to add configuration',
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -489,7 +468,7 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
             ),
-            child: Text('Save', style: TextStyle(color: Colors.white)),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -497,21 +476,24 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
   }
 
   void _showEditConfigDialog(Map<String, dynamic> config) {
-    final valueController = TextEditingController(text: config['value']);
+    final id = config['id'] ?? config['configId'];
+    final name = (config['name'] ?? config['key'] ?? '').toString();
+    final currentValue = (config['value'] ?? '').toString();
+
+    final valueController = TextEditingController(text: currentValue);
     final reasonController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit Configuration'),
+        title: const Text('Edit Configuration'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Show current config name
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
@@ -519,16 +501,11 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text('Configuration',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                     Text(
-                      'Configuration',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      config['name'],
-                      style: TextStyle(
+                      name,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -536,14 +513,12 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 16),
-              
-              // Current value
+              const SizedBox(height: 16),
               Row(
                 children: [
-                  Text('Current Value: '),
+                  const Text('Current Value: '),
                   Text(
-                    config['value'],
+                    currentValue,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.blue[700],
@@ -551,25 +526,17 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
-              
-              Text(
-                'New Value',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Text('New Value', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               TextField(
                 controller: valueController,
                 decoration: InputDecoration(
                   hintText: 'Enter new value',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-              SizedBox(height: 16),
-              
-              // Reason for change (REQUIRED)
+              const SizedBox(height: 16),
               Text(
                 'Reason for Change *',
                 style: TextStyle(
@@ -577,22 +544,18 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                   color: Colors.red[700],
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               TextField(
                 controller: reasonController,
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'Explain why this change is needed...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-              SizedBox(height: 16),
-              
-              // Warning
+              const SizedBox(height: 16),
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
@@ -601,14 +564,11 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                 child: Row(
                   children: [
                     Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'This will NOT affect existing orders',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange[900],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.orange[900]),
                       ),
                     ),
                   ],
@@ -620,26 +580,27 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (valueController.text.isNotEmpty && 
+              if (valueController.text.isNotEmpty &&
                   reasonController.text.isNotEmpty) {
                 final userProvider = context.read<UserProvider>();
-                
-                // Call API to update config
+
                 final result = await ApiService.updateConfig(
-                  id: config['id'],
-                  value: valueController.text,
-                  reason: reasonController.text,
+                  id: id,
+                  value: valueController.text.trim(),
+                  reason: reasonController.text.trim(),
                   updatedBy: userProvider.userId,
                 );
-                
+
                 if (result['success'] == true) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Configuration updated! Change logged in audit trail.'),
+                    const SnackBar(
+                      content: Text(
+                        'Configuration updated! Change logged in audit trail.',
+                      ),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -648,14 +609,16 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(result['message'] ?? 'Failed to update configuration'),
+                      content: Text(
+                        result['message'] ?? 'Failed to update configuration',
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('Please provide a reason for this change'),
                     backgroundColor: Colors.red,
                   ),
@@ -665,7 +628,7 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
             ),
-            child: Text('Save Changes', style: TextStyle(color: Colors.white)),
+            child: const Text('Save Changes', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -673,18 +636,20 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
   }
 
   void _showDeleteConfigDialog(Map<String, dynamic> config) {
+    final id = config['id'] ?? config['configId'];
+    final name = (config['name'] ?? config['key'] ?? '').toString();
     final reasonController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Configuration'),
+        title: const Text('Delete Configuration'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Are you sure you want to delete "${config['name']}"?'),
-            SizedBox(height: 16),
+            Text('Are you sure you want to delete "$name"?'),
+            const SizedBox(height: 16),
             Text(
               'Reason for Deletion *',
               style: TextStyle(
@@ -692,11 +657,11 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
                 color: Colors.red[700],
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             TextField(
               controller: reasonController,
               maxLines: 2,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Explain why...',
                 border: OutlineInputBorder(),
               ),
@@ -706,41 +671,43 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (reasonController.text.isNotEmpty) {
-                final userProvider = context.read<UserProvider>();
-                
-                // Call API to delete config
-                final result = await ApiService.deleteConfig(
-                  id: config['id'],
-                  reason: reasonController.text,
-                  deletedBy: userProvider.userId,
+              if (reasonController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please provide a reason'),
+                    backgroundColor: Colors.red,
+                  ),
                 );
-                
-                if (result['success'] == true) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Configuration deleted! Change logged.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  Navigator.pop(context);
-                  _loadConfigs();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(result['message'] ?? 'Failed to delete configuration'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
+                return;
+              }
+
+              final userProvider = context.read<UserProvider>();
+
+              final result = await ApiService.deleteConfig(
+                id: id,
+                reason: reasonController.text.trim(),
+                deletedBy: userProvider.userId,
+              );
+
+              if (result['success'] == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Configuration deleted! Change logged.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                Navigator.pop(context);
+                _loadConfigs();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Please provide a reason'),
+                    content: Text(
+                      result['message'] ?? 'Failed to delete configuration',
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -749,10 +716,10 @@ class _ConfigManagementScreenState extends State<ConfigManagementScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
             ),
-            child: Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
-}
+} 

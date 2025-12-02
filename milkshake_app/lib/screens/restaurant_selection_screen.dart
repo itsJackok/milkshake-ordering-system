@@ -52,30 +52,21 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
     
     setState(() => _isLoadingTimeSlots = true);
     
-    // Parse restaurant hours (e.g., "08:00 - 20:00" or "8am - 8pm")
     String hoursString = _selectedRestaurant!.hours;
     
-    // Generate realistic time slots based on restaurant hours
     List<TimeSlot> timeSlots = [];
     
-    // Parse opening and closing times
-    // Assuming format like "08:00 - 20:00" or "8:00 AM - 8:00 PM"
     try {
-      // Simple parsing - extract hours
-      // For now, let's use standard business hours: 8 AM - 8 PM
-      int openHour = 8;  // 8 AM
-      int closeHour = 20; // 8 PM
+      int openHour = 8;  
+      int closeHour = 20; 
       
-      // Try to parse from hours string
       if (hoursString.contains('-')) {
         var parts = hoursString.split('-');
         if (parts.length == 2) {
-          // Try to extract opening hour
           var openPart = parts[0].trim();
           if (openPart.contains(':')) {
             openHour = int.tryParse(openPart.split(':')[0].replaceAll(RegExp(r'[^0-9]'), '')) ?? 8;
           }
-          // Try to extract closing hour
           var closePart = parts[1].trim();
           if (closePart.contains(':')) {
             closeHour = int.tryParse(closePart.split(':')[0].replaceAll(RegExp(r'[^0-9]'), '')) ?? 20;
@@ -83,21 +74,17 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
         }
       }
       
-      // Ensure reasonable hours
       if (openHour < 6) openHour = 8;
       if (closeHour > 23) closeHour = 20;
       if (closeHour <= openHour) closeHour = openHour + 10;
       
-      // Generate time slots every 30 minutes
       for (int hour = openHour; hour < closeHour; hour++) {
-        // Add :00 slot
         String time1 = '${hour.toString().padLeft(2, '0')}:00';
         timeSlots.add(TimeSlot(
           time: time1,
           isAvailable: true,
         ));
         
-        // Add :30 slot
         String time2 = '${hour.toString().padLeft(2, '0')}:30';
         timeSlots.add(TimeSlot(
           time: time2,
@@ -105,14 +92,12 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
         ));
       }
       
-      // Add final closing hour slot
       String finalTime = '${closeHour.toString().padLeft(2, '0')}:00';
       timeSlots.add(TimeSlot(
         time: finalTime,
         isAvailable: true,
       ));
       
-      // If selected date is today, remove past time slots
       if (_selectedDate!.year == DateTime.now().year &&
           _selectedDate!.month == DateTime.now().month &&
           _selectedDate!.day == DateTime.now().day) {
@@ -125,7 +110,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
           int slotHour = int.parse(parts[0]);
           int slotMinute = int.parse(parts[1]);
           
-          // Keep slots that are at least 1 hour in the future
           if (slotHour > currentHour + 1) return true;
           if (slotHour == currentHour + 1 && slotMinute >= currentMinute) return true;
           return false;
@@ -133,7 +117,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
       }
       
     } catch (e) {
-      // Fallback to default hours if parsing fails
       for (int hour = 8; hour < 20; hour++) {
         timeSlots.add(TimeSlot(time: '${hour.toString().padLeft(2, '0')}:00', isAvailable: true));
         timeSlots.add(TimeSlot(time: '${hour.toString().padLeft(2, '0')}:30', isAvailable: true));
@@ -175,7 +158,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
       return;
     }
 
-    // Create order first, then go to payment
     _createOrder();
   }
 
@@ -185,7 +167,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
   setState(() => _isLoading = true);
 
   try {
-    // Combine date and time into a single DateTime
     final pickupDateTime = DateTime(
       _selectedDate!.year,
       _selectedDate!.month,
@@ -194,7 +175,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
       int.parse(_selectedTimeSlot!.time.split(':')[1]),
     );
 
-    // Call real API to create order
     final result = await ApiService.createOrder(
       userId: userProvider.userId,
       restaurantId: _selectedRestaurant!.id,
@@ -206,7 +186,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
-      // ✅ The backend puts the order in result['data']
       final data = result['data'] as Map<String, dynamic>?;
 
       if (data == null || data['id'] == null) {
@@ -218,7 +197,6 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
       final double totalAmount =
           (data['totalCost'] as num?)?.toDouble() ?? _total;
 
-      // Go to payment screen with the REAL orderId & total
       Navigator.pushNamed(
         context,
         '/payment',

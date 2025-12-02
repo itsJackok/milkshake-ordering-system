@@ -237,9 +237,20 @@ Login and Register Page:
 
 
 Home Page:
-<img width="1349" height="714" alt="image" src="https://github.com/user-attachments/assets/72a82ecb-b47c-49e7-87b3-744b2b376f43" />
-<img width="1348" height="719" alt="image" src="https://github.com/user-attachments/assets/667241da-2678-4ad0-9e6a-b6bebd2863af" />
-<img width="1350" height="716" alt="image" src="https://github.com/user-attachments/assets/7bf38f81-eb14-421a-9767-5796beea33f0" />
+<img width="1360" height="727" alt="image" src="https://github.com/user-attachments/assets/821c8a2f-2707-47d0-b8ae-eb7e35bdf2e6" />
+<img width="1358" height="727" alt="image" src="https://github.com/user-attachments/assets/0a46255a-dce3-4490-91fa-a37772c48a60" />
+<img width="1360" height="723" alt="image" src="https://github.com/user-attachments/assets/c3a4ab29-695d-467d-8b10-4f6d3213fa29" />
+
+Lookup management Page:
+<img width="1359" height="725" alt="image" src="https://github.com/user-attachments/assets/399069ed-8ce1-4654-ada8-e3c5e4af11be" />
+<img width="1359" height="729" alt="image" src="https://github.com/user-attachments/assets/c4034795-5726-41b2-ade1-b17af39439ec" />
+
+Reports Page:
+<img width="1357" height="733" alt="image" src="https://github.com/user-attachments/assets/1fb5513f-d403-4fe6-8ff4-57df59d75fde" />
+<img width="1360" height="736" alt="image" src="https://github.com/user-attachments/assets/848821ef-3c1b-499c-b6ef-70fc321232e6" />
+
+Configuration Management Page:
+<img width="1360" height="728" alt="image" src="https://github.com/user-attachments/assets/1646823a-dff2-4957-ab54-bdd58a821d5c" />
 
 Profile Page:
 <img width="1359" height="722" alt="image" src="https://github.com/user-attachments/assets/30d19093-e1f8-4913-825f-39a4b8615b9b" />

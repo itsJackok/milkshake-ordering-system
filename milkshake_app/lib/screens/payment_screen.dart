@@ -88,7 +88,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
 
       if (result['success'] == true) {
-        // Extract transactionId if backend sends it
         final transactionId = result['transactionId']?.toString() ?? 'N/A';
 
         // Navigate to the pretty receipt screen

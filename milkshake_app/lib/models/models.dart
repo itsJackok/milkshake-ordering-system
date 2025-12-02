@@ -1,28 +1,36 @@
 class Lookup {
   final int id;
   final String name;
-  final String type;
   final double price;
   final String? description;
+  final DateTime? createdAt;
+  final DateTime? lastUpdated;
 
   Lookup({
     required this.id,
     required this.name,
-    required this.type,
     required this.price,
     this.description,
+    this.createdAt,
+    this.lastUpdated,
   });
 
   factory Lookup.fromJson(Map<String, dynamic> json) {
     return Lookup(
-      id: json['id'],
-      name: json['name'],
-      type: json['type'],
-      price: (json['price'] as num).toDouble(),
-      description: json['description'],
+      id: json['id'] as int,
+      name: json['name'] as String,
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      description: json['description'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+      lastUpdated: json['lastUpdated'] != null
+          ? DateTime.parse(json['lastUpdated'] as String)
+          : null,
     );
   }
 }
+
 
 class Restaurant {
   final int id;
@@ -112,7 +120,6 @@ class DiscountInfo {
   factory DiscountInfo.fromJson(Map<String, dynamic> json) {
     String? _toNullableString(dynamic value) {
       if (value == null) return null;
-      // if backend sends 0, 1, etc. this will still be okay
       return value.toString();
     }
 

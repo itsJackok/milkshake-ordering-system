@@ -17,37 +17,84 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
 
-  final List<double> weeklyData = [65, 100, 75, 85, 60, 80, 110];
-  final List<double> monthlyData = [85, 120, 90, 95, 80, 85, 130];
-  final Map<String, double> growthData = {
-    '2020': 50,
-    '2021': 75,
-    '2022': 90,
-    '2023': 120,
-    '2024': 150,
-    '2025': 180,
-  };
+  List<double> weeklyData = [];
+  List<double> monthlyData = [];
+  Map<String, double> growthData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReportData();
+  }
+
+  Future<void> _loadReportData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final stats = await ApiService.getManagerReportStats(
+        dateFilter: _dateFilter,
+        singleDate: _selectedDate,
+        startDate: _startDate,
+        endDate: _endDate,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        weeklyData = stats.weeklyOrders;
+        monthlyData = stats.monthlyOrders;
+        growthData = stats.yearlyGrowth;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load report data: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _buildFilterLabel() {
+    if (_dateFilter == 'Single Date' && _selectedDate != null) {
+      return DateFormat('dd MMM yyyy').format(_selectedDate!);
+    }
+    if (_dateFilter == 'Date Range' && _startDate != null && _endDate != null) {
+      return '${DateFormat('dd MMM').format(_startDate!)} - ${DateFormat('dd MMM yyyy').format(_endDate!)}';
+    }
+    return 'No date filter applied';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Reports'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Reports'),
+        backgroundColor: Colors.blue[600],
+        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           Container(
-            margin: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
             child: ElevatedButton.icon(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Logged out successfully!')),
+                  const SnackBar(content: Text('Logged out successfully!')),
                 );
               },
-              icon: Icon(Icons.logout, size: 18),
-              label: Text('Logout'),
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text('Logout'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[600],
                 foregroundColor: Colors.white,
@@ -60,21 +107,24 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // HEADER
           Container(
             color: Colors.white,
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Row(
               children: [
                 Text(
                   'Reporting History',
                   style: GoogleFonts.poppins(
                     fontSize: 28,
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(16),
@@ -90,34 +140,51 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
               ],
             ),
           ),
-          
+
           Container(
             color: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(
               children: [
                 Icon(Icons.filter_list, size: 20, color: Colors.grey[600]),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   'Filter',
                   style: TextStyle(color: Colors.grey[700]),
                 ),
-                SizedBox(width: 16),
-                
+                const SizedBox(width: 16),
+
                 _buildFilterButton('Single Date', _dateFilter == 'Single Date'),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _buildFilterButton('Date Range', _dateFilter == 'Date Range'),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _buildFilterButton('None', _dateFilter == 'None'),
-                
-                Spacer(),
-                
+
+                const Spacer(),
+
+                Text(
+                  _buildFilterLabel(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
                 IconButton(
-                  icon: Icon(Icons.print, size: 20),
+                  icon: const Icon(Icons.refresh, size: 20),
+                  tooltip: 'Reload data',
+                  onPressed: _loadReportData,
+                ),
+
+                IconButton(
+                  icon: const Icon(Icons.print, size: 20),
                   onPressed: () {},
                   tooltip: 'Print',
                 ),
-                
+
                 TextButton(
                   onPressed: () {
                     setState(() {
@@ -126,38 +193,41 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                       _startDate = null;
                       _endDate = null;
                     });
+                    _loadReportData();
                   },
-                  child: Text('Clear'),
+                  child: const Text('Clear'),
                 ),
               ],
             ),
           ),
-          
-          Divider(height: 1),
-          
+
+          const Divider(height: 1),
+
           Container(
             color: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
                 _buildTab('Orders'),
-                SizedBox(width: 24),
+                const SizedBox(width: 24),
                 _buildTab('Trends'),
-                SizedBox(width: 24),
+                const SizedBox(width: 24),
                 _buildTab('Audit Lookups'),
               ],
             ),
           ),
-          
-          Divider(height: 1),
-          
+
+          const Divider(height: 1),
+
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(24),
-              child: _selectedTab == 'Trends'
-                  ? _buildTrendsView()
-                  : _buildPlaceholderView(),
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: _selectedTab == 'Trends'
+                        ? _buildTrendsView()
+                        : _buildPlaceholderView(),
+                  ),
           ),
         ],
       ),
@@ -166,14 +236,15 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
 
   Widget _buildFilterButton(String label, bool isSelected) {
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
         setState(() => _dateFilter = label);
+
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: isSelected ? Colors.blue[600] : Colors.grey[200],
         foregroundColor: isSelected ? Colors.white : Colors.black87,
         elevation: 0,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -187,7 +258,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
     return InkWell(
       onTap: () => setState(() => _selectedTab = label),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -209,39 +280,49 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
   }
 
   Widget _buildTrendsView() {
+    final hasAnyData =
+        weeklyData.isNotEmpty || monthlyData.isNotEmpty || growthData.isNotEmpty;
+
+    if (!hasAnyData) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: Column(
+          children: [
+            Icon(Icons.insights, size: 60, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(
+              'No report data found for the selected filter',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildWeeklyChart(),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: _buildMonthlyChart(),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: _buildGrowthChart(),
-            ),
+            Expanded(child: _buildWeeklyChart()),
+            const SizedBox(width: 16),
+            Expanded(child: _buildMonthlyChart()),
+            const SizedBox(width: 16),
+            Expanded(child: _buildGrowthChart()),
           ],
         ),
-        SizedBox(height: 16),
-        
+        const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _buildBottomBarChart('xx', weeklyData),
+              child: _buildBottomBarChart('Weekly ', weeklyData),
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
+            Expanded(child: _buildBottomGrowthChart()),
+            const SizedBox(width: 16),
             Expanded(
-              child: _buildBottomGrowthChart(),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: _buildBottomBarChart('xx', monthlyData),
+              child: _buildBottomBarChart('Monthly ', monthlyData),
             ),
           ],
         ),
@@ -254,7 +335,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -265,7 +346,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 fontSize: 12,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Weekly',
               style: GoogleFonts.poppins(
@@ -273,13 +354,15 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             SizedBox(
               height: 200,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: 120,
+                  maxY: weeklyData.isEmpty
+                      ? 10
+                      : (weeklyData.reduce((a, b) => a > b ? a : b) + 10),
                   barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     show: true,
@@ -287,20 +370,36 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              days[value.toInt()],
-                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                            ),
-                          );
+                          const days = [
+                            'Mon',
+                            'Tue',
+                            'Wed',
+                            'Thu',
+                            'Fri',
+                            'Sat',
+                            'Sun'
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < days.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                days[value.toInt()],
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey[600]),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
                         },
                       ),
                     ),
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(show: false),
                   borderData: FlBorderData(show: false),
@@ -315,7 +414,11 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                           borderRadius: BorderRadius.circular(4),
                           backDrawRodData: BackgroundBarChartRodData(
                             show: true,
-                            toY: 120,
+                            toY: weeklyData.isEmpty
+                                ? 10
+                                : (weeklyData.reduce(
+                                        (a, b) => a > b ? a : b) +
+                                    10),
                             color: Colors.blue[50],
                           ),
                         ),
@@ -336,7 +439,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -347,7 +450,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 fontSize: 12,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Monthly',
               style: GoogleFonts.poppins(
@@ -355,13 +458,15 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             SizedBox(
               height: 200,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: 140,
+                  maxY: monthlyData.isEmpty
+                      ? 10
+                      : (monthlyData.reduce((a, b) => a > b ? a : b) + 10),
                   barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     show: true,
@@ -369,20 +474,36 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              months[value.toInt()],
-                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                            ),
-                          );
+                          const months = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul'
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < months.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                months[value.toInt()],
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey[600]),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
                         },
                       ),
                     ),
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(show: false),
                   borderData: FlBorderData(show: false),
@@ -397,7 +518,11 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                           borderRadius: BorderRadius.circular(4),
                           backDrawRodData: BackgroundBarChartRodData(
                             show: true,
-                            toY: 140,
+                            toY: monthlyData.isEmpty
+                                ? 10
+                                : (monthlyData.reduce(
+                                        (a, b) => a > b ? a : b) +
+                                    10),
                             color: Colors.blue[50],
                           ),
                         ),
@@ -418,7 +543,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -441,7 +566,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             SizedBox(
               height: 200,
               child: LineChart(
@@ -453,26 +578,37 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
                           final years = growthData.keys.toList();
-                          if (value.toInt() >= 0 && value.toInt() < years.length) {
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < years.length) {
                             return Text(
                               years[value.toInt()],
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                              style: TextStyle(
+                                  fontSize: 10, color: Colors.grey[600]),
                             );
                           }
-                          return Text('');
+                          return const SizedBox.shrink();
                         },
                       ),
                     ),
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: growthData.values.toList().asMap().entries.map((e) {
-                        return FlSpot(e.key.toDouble(), e.value);
-                      }).toList(),
+                      spots: growthData.values
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((e) => FlSpot(
+                                e.key.toDouble(),
+                                e.value,
+                              ))
+                          .toList(),
                       isCurved: true,
                       color: Colors.green[400],
                       barWidth: 3,
@@ -498,7 +634,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -509,7 +645,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 fontSize: 12,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               title,
               style: GoogleFonts.poppins(
@@ -517,13 +653,15 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             SizedBox(
               height: 200,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: 120,
+                  maxY: data.isEmpty
+                      ? 10
+                      : (data.reduce((a, b) => a > b ? a : b) + 10),
                   barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     show: true,
@@ -531,23 +669,36 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-                          if (value.toInt() < labels.length) {
+                          const labels = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul'
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < labels.length) {
                             return Padding(
-                              padding: EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.only(top: 8),
                               child: Text(
                                 labels[value.toInt()],
-                                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey[600]),
                               ),
                             );
                           }
-                          return Text('');
+                          return const SizedBox.shrink();
                         },
                       ),
                     ),
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(show: false),
                   borderData: FlBorderData(show: false),
@@ -562,7 +713,11 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                           borderRadius: BorderRadius.circular(4),
                           backDrawRodData: BackgroundBarChartRodData(
                             show: true,
-                            toY: 120,
+                            toY: data.isEmpty
+                                ? 10
+                                : (data.reduce(
+                                        (a, b) => a > b ? a : b) +
+                                    10),
                             color: Colors.blue[50],
                           ),
                         ),
@@ -583,7 +738,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -591,7 +746,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'xx',
+                  'Growth Detail',
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -606,7 +761,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             SizedBox(
               height: 200,
               child: LineChart(
@@ -617,32 +772,38 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          final years = ['2020', '2021', '2022', '2023', '2024', '2025'];
-                          if (value.toInt() >= 0 && value.toInt() < years.length) {
+                          final years = growthData.keys.toList();
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < years.length) {
                             return Text(
                               years[value.toInt()],
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                              style: TextStyle(
+                                  fontSize: 10, color: Colors.grey[600]),
                             );
                           }
-                          return Text('');
+                          return const SizedBox.shrink();
                         },
                       ),
                     ),
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: [
-                        FlSpot(0, 55),
-                        FlSpot(1, 80),
-                        FlSpot(2, 95),
-                        FlSpot(3, 125),
-                        FlSpot(4, 155),
-                        FlSpot(5, 185),
-                      ],
+                      spots: growthData.values
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((e) => FlSpot(
+                                e.key.toDouble(),
+                                e.value,
+                              ))
+                          .toList(),
                       isCurved: true,
                       color: Colors.green[400],
                       barWidth: 3,
@@ -669,7 +830,7 @@ class _ManagerReportsScreenState extends State<ManagerReportsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.bar_chart, size: 80, color: Colors.grey[400]),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Select "Trends" tab to view analytics',
             style: TextStyle(
