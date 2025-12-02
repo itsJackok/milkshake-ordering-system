@@ -66,7 +66,6 @@ class MyApp extends StatelessWidget {
         ),
         home: SplashScreen(),
         onGenerateRoute: (settings) {
-          // Handle routes with arguments
           if (settings.name == '/payment') {
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
@@ -76,7 +75,7 @@ class MyApp extends StatelessWidget {
           }
           
           // Default routes
-          return null; // Let the routes table handle it
+          return null; 
         },
         routes: {
           '/auth': (context) => AuthScreen(),
