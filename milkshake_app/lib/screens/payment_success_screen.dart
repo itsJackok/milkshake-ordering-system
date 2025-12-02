@@ -375,10 +375,13 @@ class PaymentSuccessScreen extends StatelessWidget {
                             ),
                             ElevatedButton.icon(
                               onPressed: () {
-                                // placeholder for print / share
+                                Navigator.popUntil(
+                                  context,
+                                  ModalRoute.withName('/auth'),
+                                );
                               },
-                              icon: const Icon(Icons.receipt_long),
-                              label: const Text('Done'),
+                              icon: const Icon(Icons.logout),
+                              label: const Text('Logout'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF667eea),
                               ),
