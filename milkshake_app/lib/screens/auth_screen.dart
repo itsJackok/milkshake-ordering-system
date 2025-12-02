@@ -551,7 +551,7 @@ Widget build(BuildContext context) {
             ),
             SizedBox(height: 16),
             
-            // Role Selection
+
             DropdownButtonFormField<String>(
               value: _selectedRole,
               decoration: InputDecoration(
